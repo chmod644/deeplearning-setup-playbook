@@ -1,0 +1,67 @@
+- hosts: localhost
+  become: yes
+  tasks:
+    # Set hostname
+    - name: prompt hostname
+      pause:
+        prompt: "HOSTNAME [{{ ansible_fqdn }}]"
+      register: hostname_input
+    - name: set default hostname
+      set_fact:
+        hostname: "{{ hostname_input.user_input | default(ansible_fqdn, true) }}"
+    - name: set hostname
+      hostname:
+        name: "{{ hostname }}"
+      when: hostname !=  ansible_fqdn
+    # Configure apt server
+    - name: set japanese apt server
+      replace:
+        path: /etc/apt/sources.list
+        regexp: '(http:\/\/archive\.ubuntu\.com\/ubuntu\/|http:\/\/us\.archive\.ubuntu\.com\/ubuntu\/)'
+        replace: 'http://jp.archive.ubuntu.com/ubuntu/'
+    # Install apt packages
+    - name: install apt packages
+      apt:
+        name: [git, git-svn, vim-gnome, ntp, ntpdate]
+        state: present
+        update_cache: yes
+    # Install docker-ce & nvidia-docker2
+    - name: install docker dependencies
+      apt:
+        name: [apt-transport-https, ca-certificates, curl, gnupg-agent, software-properties-common]
+        state: present
+        update_cache: yes
+    - name: add docker registory key
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
+    - name: add docker repository source
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        state: present
+        update_cache: no
+        filename: docker
+    - name: add nvidia-docker repository key
+      apt_key:
+        url: https://nvidia.github.io/nvidia-docker/gpgkey
+        state: present
+    - name: add nvidia-docker repository source
+      get_url:
+        url: https://nvidia.github.io/nvidia-docker/debian{{ansible_distribution_major_version}}/nvidia-docker.list
+        dest: /etc/apt/sources.list.d/nvidia-docker.list
+        owner: root
+        group: root
+        mode: 0644
+    - name: install docker and nvidia-docker
+      apt:
+        name: [docker-ce, docker-ce-cli, containerd.io, nvidia-docker2]
+        state: present
+        update_cache: yes
+      register: nvidia_docker_apt
+    - name: reload docker configuration
+      service: 
+        name: docker
+        state: reloaded
+      when: nvidia_docker_apt.changed == True
+
+    
