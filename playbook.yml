@@ -22,7 +22,7 @@
     # Install apt packages
     - name: install apt packages
       apt:
-        name: [git, git-svn, vim-gnome, ntp, ntpdate]
+        name: [git, vim-gnome, screen]
         state: present
         update_cache: yes
     # Install docker-ce & nvidia-docker2
@@ -47,21 +47,30 @@
         state: present
     - name: add nvidia-docker repository source
       get_url:
-        url: https://nvidia.github.io/nvidia-docker/debian{{ansible_distribution_major_version}}/nvidia-docker.list
+        url: https://nvidia.github.io/nvidia-docker/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/nvidia-docker.list
         dest: /etc/apt/sources.list.d/nvidia-docker.list
         owner: root
         group: root
         mode: 0644
     - name: install docker and nvidia-docker
       apt:
-        name: [docker-ce, docker-ce-cli, containerd.io, nvidia-docker2]
+        name: ['docker-ce=5:18.09.6~3*', 'nvidia-docker2=2.0.3+docker18.09.6-3', docker-ce-cli, containerd.io]
         state: present
         update_cache: yes
       register: nvidia_docker_apt
+    - name: keep versions of docker and nvidia-docker
+      dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      with_items: [docker-ce, nvidia-docker2]
     - name: reload docker configuration
-      service: 
+      service:
         name: docker
         state: reloaded
       when: nvidia_docker_apt.changed == True
+    - name: add user to docker group
+      user:
+        name: '{{ ansible_user }}'
+        groups: docker
+        append: yes
 
-    
