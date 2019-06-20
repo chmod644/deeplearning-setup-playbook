@@ -1,5 +1,7 @@
 - hosts: localhost
   become: yes
+  vars:
+    ubuntu_dist_for_nvidia_cuda: "{{ ansible_distribution_version | regex_replace('\\.', '')}}"
   tasks:
     # Set hostname
     - name: prompt hostname
@@ -23,6 +25,22 @@
     - name: install apt packages
       apt:
         name: [git, vim-gnome, screen]
+        state: present
+        update_cache: yes
+    # Install nvidia-driver
+    - name: add nvidia-driver registory key
+      apt_key:
+        url: http://developer.download.nvidia.com/compute/cuda/repos/{{ ansible_distribution | lower }}{{ ubuntu_dist_for_nvidia_cuda }}/{{ ansible_architecture }}/7fa2af80.pub
+        state: present
+    - name: add nvidia repository source
+      apt_repository:
+        repo: deb https://developer.download.nvidia.com/compute/cuda/repos/{{ ansible_distribution | lower }}{{ ubuntu_dist_for_nvidia_cuda }}/{{ ansible_architecture }} /
+        state: present
+        update_cache: no
+        filename: nvidia-cuda
+    - name: install apt packages
+      apt:
+        name: [nvidia-418]
         state: present
         update_cache: yes
     # Install docker-ce & nvidia-docker2
