@@ -1,6 +1,7 @@
 - hosts: localhost
   become: yes
   vars:
+    # This configuration is only available for Ubuntu
     ubuntu_dist_for_nvidia_cuda: "{{ ansible_distribution_version | regex_replace('\\.', '')}}"
   tasks:
     # Set hostname
@@ -32,13 +33,13 @@
       apt_key:
         url: http://developer.download.nvidia.com/compute/cuda/repos/{{ ansible_distribution | lower }}{{ ubuntu_dist_for_nvidia_cuda }}/{{ ansible_architecture }}/7fa2af80.pub
         state: present
-    - name: add nvidia repository source
+    - name: add nvidia-driver repository source
       apt_repository:
         repo: deb https://developer.download.nvidia.com/compute/cuda/repos/{{ ansible_distribution | lower }}{{ ubuntu_dist_for_nvidia_cuda }}/{{ ansible_architecture }} /
         state: present
         update_cache: no
         filename: nvidia-cuda
-    - name: install apt packages
+    - name: install nvidia-driver
       apt:
         name: [nvidia-418]
         state: present
