@@ -16,6 +16,10 @@
       hostname:
         name: "{{ hostname }}"
       when: hostname !=  ansible_fqdn
+    # Set directory to english name
+    - name: set home directories to english name
+      shell: LANG=C xdg-user-dirs-gtk-update
+      become: no
     # Configure apt server
     - name: set japanese apt server
       replace:
@@ -28,20 +32,45 @@
         name: [aptitude, git, make, gcc, vim-gnome, openssh-server]
         state: present
         update_cache: yes
-    # Install nvidia-driver
-    - name: add nvidia-driver registory key
+    # Install Google Chrome
+    - name: add chrome registory key
       apt_key:
-        url: http://developer.download.nvidia.com/compute/cuda/repos/{{ ansible_distribution | lower }}{{ ubuntu_dist_for_nvidia_cuda }}/{{ ansible_architecture }}/7fa2af80.pub
+        url: https://dl-ssl.google.com/linux/linux_signing_key.pub
         state: present
-    - name: add nvidia-driver repository source
+    - name: add chrome registory
       apt_repository:
-        repo: deb https://developer.download.nvidia.com/compute/cuda/repos/{{ ansible_distribution | lower }}{{ ubuntu_dist_for_nvidia_cuda }}/{{ ansible_architecture }} /
+        repo: deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
         state: present
         update_cache: no
-        filename: nvidia-cuda
+        filename: google-chrome
+    - name: install google-chrome
+      apt:
+        name: [google-chrome-stable]
+        state: present
+        update_cache: yes
+    # Install Visual Studio Code
+    - name: add vscode registory key
+      apt_key:
+        url: https://packages.microsoft.com/keys/microsoft.asc
+        state: present
+    - name: add vscode registory
+      apt_repository:
+        repo: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
+        state: present
+        update_cache: no
+        filename: vscode
+    - name: install visual studio code
+      apt:
+        name: [code]
+        state: present
+        update_cache: yes
+    # Install nvidia-driver
+    - name: add graphics-driver registory
+      apt_repository:
+        repo: ppa:graphics-drivers/ppa
     - name: install nvidia-driver
       apt:
-        name: [nvidia-driver-418]
+        name: [nvidia-driver-430]
         state: present
         update_cache: yes
     - name: Blacklist the nouveau driver module
@@ -96,4 +125,16 @@
         name: '{{ ansible_user }}'
         groups: docker
         append: yes
+    - name: set git email
+      git_config:
+        name: user.email
+        scope: global
+        value: chmod644@users.noreply.github.com
+      become: no
+    - name: set git username
+      git_config:
+        name: user.name
+        scope: global
+        value: chmod644
+      become: no
 
