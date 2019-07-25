@@ -119,7 +119,11 @@
       dpkg_selections:
         name: "{{ item }}"
         selection: hold
-      with_items: [docker-ce, docker-ce-cli, nvidia-docker2, nvidia-container-runtime]
+      with_items:
+        - docker-ce
+        - docker-ce-cli
+        - nvidia-docker2
+        - nvidia-container-runtime
     - name: reload docker configuration
       service:
         name: docker
