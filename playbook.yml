@@ -106,7 +106,12 @@
         mode: 0644
     - name: install docker and nvidia-docker
       apt:
-        name: ['docker-ce=5:18.09.8~3-0~ubuntu-bionic', 'nvidia-docker2=2.1.0-1', 'nvidia-container-runtime=3.0.0-1', docker-ce-cli, containerd.io]
+        name:
+          - 'docker-ce=5:19.03.0~3-0~ubuntu-bionic'
+          - 'docker-ce-cli=5:19.03.0~3-0~ubuntu-bionic'
+          - 'nvidia-docker2=2.1.0-1'
+          - 'nvidia-container-runtime=3.1.0-1'
+          - containerd.io
         state: present
         update_cache: yes
       register: nvidia_docker_apt
@@ -114,7 +119,7 @@
       dpkg_selections:
         name: "{{ item }}"
         selection: hold
-      with_items: [docker-ce, nvidia-docker2, nvidia-container-runtime]
+      with_items: [docker-ce, docker-ce-cli, nvidia-docker2, nvidia-container-runtime]
     - name: reload docker configuration
       service:
         name: docker
